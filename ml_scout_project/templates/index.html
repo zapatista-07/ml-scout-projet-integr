@@ -1,0 +1,613 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML Scout — Prédiction des Adhérents</title>
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h2>🏆 <span>ML</span> Scout</h2>
+    <p>Projet Intégré ML</p>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Navigation</div>
+    <a class="nav-item active" onclick="showSection('dashboard')">
+      <span class="icon">📊</span><span>Dashboard</span>
+    </a>
+    <a class="nav-item" onclick="showSection('units')">
+      <span class="icon">🏢</span><span>Unités</span>
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Modèles ML</div>
+    <a class="nav-item" onclick="showSection('regression')">
+      <span class="icon">📈</span><span>Régression</span>
+    </a>
+    <a class="nav-item" onclick="showSection('classification')">
+      <span class="icon">🎯</span><span>Classification</span>
+    </a>
+    <a class="nav-item" onclick="showSection('clustering')">
+      <span class="icon">🔵</span><span>Clustering</span>
+    </a>
+    <a class="nav-item" onclick="showSection('timeseries')">
+      <span class="icon">⏱️</span><span>Time Series</span>
+    </a>
+    <a class="nav-item" onclick="showSection('anomaly')">
+      <span class="icon">🚨</span><span>Anomalies</span>
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">Prédiction Live</div>
+    <a class="nav-item" onclick="showSection('predict')">
+      <span class="icon">🤖</span><span>Prédire</span>
+    </a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════════════════════ -->
+<main class="main">
+
+  <!-- Header -->
+  <div class="header">
+    <h1>🏆 ML Scout — Prédiction des Adhérents</h1>
+    <p>Projet Intégré ML · Régression · Classification · Clustering · Time Series · Anomaly Detection</p>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : DASHBOARD
+  ══════════════════════════════════════════════════════ -->
+  <section class="section active" id="dashboard">
+    <div class="section-title">📊 Dashboard Général</div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Adhérents 2025/26</div>
+        <div class="kpi-value">{{ total_members }}</div>
+        <div class="kpi-sub">6 unités · 3 saisons DWH</div>
+      </div>
+      <div class="kpi-card success">
+        <div class="kpi-label">Forecast 2026/27 (XGBoost)</div>
+        <div class="kpi-value">{{ total_forecast }}</div>
+        <div class="kpi-sub">Variation : {{ "%.1f"|format(((total_forecast - total_members) / total_members * 100)) }}%</div>
+      </div>
+      <div class="kpi-card danger">
+        <div class="kpi-label">Anomalies Confirmées</div>
+        <div class="kpi-value">{{ total_anomalies }}</div>
+        <div class="kpi-sub">Sur 18 observations DWH</div>
+      </div>
+      <div class="kpi-card warning">
+        <div class="kpi-label">Unités à Risque Dropout</div>
+        <div class="kpi-value">{{ dropout_units }}</div>
+        <div class="kpi-sub">Prédiction 2026/27</div>
+      </div>
+    </div>
+
+    <!-- Résumé modèles -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🏆 Meilleurs Modèles</div>
+        <table>
+          <tr><th>Section</th><th>Modèle</th><th>Métrique clé</th><th>Score</th></tr>
+          <tr><td>Régression</td><td>Ridge</td><td>R²</td><td><span class="badge badge-success">0.770</span></td></tr>
+          <tr><td>Classification</td><td>Logistic Regression</td><td>F1</td><td><span class="badge badge-success">0.800</span></td></tr>
+          <tr><td>Clustering</td><td>K-Means / GMM</td><td>Silhouette</td><td><span class="badge badge-success">0.6276</span></td></tr>
+          <tr><td>Time Series</td><td>XGBoost TS</td><td>R²</td><td><span class="badge badge-success">0.685</span></td></tr>
+          <tr><td>Anomaly</td><td>Consensus 3 méthodes</td><td>Anomalies</td><td><span class="badge badge-danger">{{ total_anomalies }} détectées</span></td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Forecasts 2026/2027 par Unité</div>
+        <table>
+          <tr><th>Unité</th><th>Réel 25/26</th><th>Ridge</th><th>XGBoost TS</th><th>Dropout</th></tr>
+          {% for u in unit_data %}
+          <tr>
+            <td><strong>U{{ u.id }}</strong></td>
+            <td>{{ u.last_members }}</td>
+            <td>{{ u.forecast_reg }}</td>
+            <td>{{ u.forecast_ts }}</td>
+            <td>
+              {% if u.dropout_pred == 1 %}
+                <span class="badge badge-danger">🔴 Risque</span>
+              {% else %}
+                <span class="badge badge-success">🟢 OK</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <!-- Visuel principal -->
+    <div class="img-card">
+      <div class="img-title">📈 Évolution des Adhérents par Unité et par Saison</div>
+      <img src="/static/visuals/ts_evolution_par_unite.png" alt="Evolution">
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : UNITÉS
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="units">
+    <div class="section-title">🏢 Profil des Unités</div>
+    <div class="unit-grid">
+      {% for u in unit_data %}
+      {% set risk_class = 'risk' if u.dropout_pred == 1 else ('warn' if u.anomalies > 0 else 'ok') %}
+      <div class="unit-card {{ risk_class }}">
+        <div class="unit-header">
+          <div class="unit-title">Unité {{ u.id }}</div>
+          {% if u.dropout_pred == 1 %}
+            <span class="badge badge-danger">🔴 Dropout</span>
+          {% elif u.anomalies > 0 %}
+            <span class="badge badge-warning">⚠️ Anomalie</span>
+          {% else %}
+            <span class="badge badge-success">🟢 Normal</span>
+          {% endif %}
+        </div>
+        <div class="unit-stat">
+          <span>Adhérents 2025/26</span>
+          <span>{{ u.last_members }}</span>
+        </div>
+        <div class="unit-stat">
+          <span>Taux de fuite</span>
+          <span>{{ u.last_leak }}%</span>
+        </div>
+        <div class="unit-stat">
+          <span>Forecast Ridge 2026/27</span>
+          <span><strong>{{ u.forecast_reg }}</strong></span>
+        </div>
+        <div class="unit-stat">
+          <span>Forecast XGBoost 2026/27</span>
+          <span><strong>{{ u.forecast_ts }}</strong></span>
+        </div>
+        <div class="unit-stat">
+          <span>P(Dropout)</span>
+          <span>{{ u.dropout_proba }}</span>
+        </div>
+        <div style="margin-top:10px">
+          <div style="font-size:0.75rem;color:#888;margin-bottom:4px">Risque dropout</div>
+          <div class="progress-bar">
+            <div class="progress-fill {{ 'danger' if u.dropout_pred == 1 else '' }}"
+                 style="width:{{ (u.dropout_proba * 100)|int }}%"></div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : RÉGRESSION
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="regression">
+    <div class="section-title">📈 Section D — Régression</div>
+
+    <div class="metric-row">
+      <div class="metric-chip best">✅ Meilleur : Ridge (R²=0.770)</div>
+      <div class="metric-chip">Random Forest (R²=0.612)</div>
+      <div class="metric-chip">Validation : LOO-CV (18 obs.)</div>
+      <div class="metric-chip">Features laggées DWH</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Comparaison des Modèles</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Modèle</th><th>MSE</th><th>RMSE</th><th>MAE</th><th>R²</th></tr>
+          {% for r in reg_cmp %}
+          <tr>
+            <td><strong>{{ r.Modèle }}</strong></td>
+            <td>{{ r.MSE }}</td>
+            <td>{{ r.RMSE }}</td>
+            <td>{{ r.MAE }}</td>
+            <td>
+              <span class="badge {{ 'badge-success' if r['R²'] > 0.6 else 'badge-warning' }}">
+                {{ r['R²'] }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Actual vs Predicted (LOO-CV)</div>
+        <img src="/static/visuals/actual_vs_predicted_regression.png" alt="Actual vs Predicted">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Feature Importance — Random Forest</div>
+        <img src="/static/visuals/feature_importance_regression.png" alt="Feature Importance">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Résidus + Q-Q Plot</div>
+        <img src="/static/visuals/residual_plots_regression.png" alt="Residuals">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Coefficients Ridge</div>
+        <img src="/static/visuals/coefficients_ridge.png" alt="Coefficients">
+      </div>
+    </div>
+    <div class="img-card">
+      <div class="img-title">Forecast 2026/2027 par Unité</div>
+      <img src="/static/visuals/forecast_2026_regression.png" alt="Forecast">
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : CLASSIFICATION
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="classification">
+    <div class="section-title">🎯 Section C — Classification</div>
+
+    <div class="metric-row">
+      <div class="metric-chip best">✅ Meilleur : Logistic Regression (F1=0.800)</div>
+      <div class="metric-chip">Random Forest (F1=0.727)</div>
+      <div class="metric-chip">Validation : LOO-CV (18 obs.)</div>
+      <div class="metric-chip">Target : dropout_risk</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Comparaison des Modèles</div>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Modèle</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1-Score</th><th>ROC-AUC</th></tr>
+          {% for r in cls_cmp %}
+          <tr>
+            <td><strong>{{ r.Modèle }}</strong></td>
+            <td>{{ r.Accuracy }}</td>
+            <td>{{ r.Precision }}</td>
+            <td>{{ r.Recall }}</td>
+            <td><span class="badge {{ 'badge-success' if r['F1-Score'] > 0.75 else 'badge-warning' }}">{{ r['F1-Score'] }}</span></td>
+            <td>{{ r['ROC-AUC'] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Matrices de Confusion</div>
+        <img src="/static/visuals/confusion_matrix_classification.png" alt="Confusion Matrix">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Courbes ROC</div>
+        <img src="/static/visuals/roc_curve_classification.png" alt="ROC Curve">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Feature Importance</div>
+        <img src="/static/visuals/feature_importance_classification.png" alt="Feature Importance">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Probabilités Dropout 2026/2027</div>
+        <img src="/static/visuals/dropout_proba_2026.png" alt="Dropout Proba">
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : CLUSTERING
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="clustering">
+    <div class="section-title">🔵 Section E — Clustering</div>
+
+    <div class="metric-row">
+      <div class="metric-chip best">✅ K-Means &amp; GMM (Silhouette=0.6276)</div>
+      <div class="metric-chip">k=3 clusters optimaux</div>
+      <div class="metric-chip">Features : avg_variation + cv_members</div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📊 Métriques</div>
+        <table>
+          <tr><th>Modèle</th><th>Silhouette ↑</th><th>Davies-Bouldin ↓</th></tr>
+          {% for r in clu_cmp %}
+          <tr>
+            <td><strong>{{ r.Modèle }}</strong></td>
+            <td><span class="badge badge-success">{{ r['Silhouette Score'] }}</span></td>
+            <td><span class="badge badge-info">{{ r['Davies-Bouldin Index'] }}</span></td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">🏷️ Profil des Clusters</div>
+        <table>
+          <tr><th>Cluster</th><th>Avg Membres</th><th>Taux Fuite</th><th>Variation</th></tr>
+          {% for r in clu_pro %}
+          <tr>
+            <td><strong>Cluster {{ r.cluster_km }}</strong></td>
+            <td>{{ r.avg_members }}</td>
+            <td>{{ r.avg_leak_rate }}%</td>
+            <td>{{ r.avg_variation }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">PCA 2D — K-Means vs GMM</div>
+        <img src="/static/visuals/clustering_pca_2d.png" alt="PCA 2D">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Dendrogramme (Ward)</div>
+        <img src="/static/visuals/clustering_dendrogram.png" alt="Dendrogram">
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Heatmap Profil Clusters</div>
+        <img src="/static/visuals/cluster_heatmap.png" alt="Heatmap">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Radar Chart</div>
+        <img src="/static/visuals/cluster_radar.png" alt="Radar">
+      </div>
+    </div>
+    <div class="img-card">
+      <div class="img-title">Probabilités GMM (Soft Assignment)</div>
+      <img src="/static/visuals/gmm_probabilities.png" alt="GMM Probabilities">
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : TIME SERIES
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="timeseries">
+    <div class="section-title">⏱️ Section F — Time Series / Forecasting</div>
+
+    <div class="metric-row">
+      <div class="metric-chip best">✅ Meilleur : XGBoost TS (R²=0.685, MAPE=28.3%)</div>
+      <div class="metric-chip">SARIMA(1,1,0) (RMSE=11.07)</div>
+      <div class="metric-chip">Validation : LOO-CV</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Comparaison SARIMA vs XGBoost TS</div>
+      <table>
+        <tr><th>Modèle</th><th>MAE</th><th>RMSE</th><th>MAPE(%)</th><th>R²</th></tr>
+        {% for r in ts_cmp %}
+        <tr>
+          <td><strong>{{ r.Modèle }}</strong></td>
+          <td>{{ r.MAE }}</td>
+          <td>{{ r.RMSE }}</td>
+          <td>{{ r['MAPE(%)'] }}%</td>
+          <td><span class="badge {{ 'badge-success' if r['R²'] > 0.5 else 'badge-danger' }}">{{ r['R²'] }}</span></td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="img-card">
+      <div class="img-title">Décomposition de la Série Temporelle</div>
+      <img src="/static/visuals/ts_decomposition.png" alt="Decomposition">
+    </div>
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Actual vs Predicted (LOO-CV)</div>
+        <img src="/static/visuals/ts_actual_vs_predicted.png" alt="Actual vs Predicted">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Feature Importance XGBoost TS</div>
+        <img src="/static/visuals/ts_feature_importance.png" alt="Feature Importance">
+      </div>
+    </div>
+    <div class="img-card">
+      <div class="img-title">Forecast 2026/2027 par Unité — SARIMA vs XGBoost TS</div>
+      <img src="/static/visuals/ts_forecast_par_unite.png" alt="Forecast par Unité">
+    </div>
+    <div class="img-card">
+      <div class="img-title">Comparaison Métriques</div>
+      <img src="/static/visuals/ts_model_comparison.png" alt="Model Comparison">
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : ANOMALY DETECTION
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="anomaly">
+    <div class="section-title">🚨 Advanced — Anomaly Detection</div>
+
+    <div class="metric-row">
+      <div class="metric-chip best">✅ {{ total_anomalies }} anomalies confirmées (consensus ≥2/3)</div>
+      <div class="metric-chip">Isolation Forest</div>
+      <div class="metric-chip">Local Outlier Factor</div>
+      <div class="metric-chip">Z-Score (2σ)</div>
+    </div>
+
+    <div class="img-card">
+      <div class="img-title">PCA 2D — Comparaison des 3 Méthodes</div>
+      <img src="/static/visuals/anomaly_pca_2d.png" alt="Anomaly PCA">
+    </div>
+    <div class="grid-2">
+      <div class="img-card">
+        <div class="img-title">Heatmap Scores d'Anomalie</div>
+        <img src="/static/visuals/anomaly_heatmap.png" alt="Anomaly Heatmap">
+      </div>
+      <div class="img-card">
+        <div class="img-title">Vote Majoritaire — Consensus</div>
+        <img src="/static/visuals/anomaly_consensus.png" alt="Consensus">
+      </div>
+    </div>
+    <div class="img-card">
+      <div class="img-title">Évolution avec Anomalies Surlignées</div>
+      <img src="/static/visuals/anomaly_evolution.png" alt="Evolution">
+    </div>
+    <div class="img-card">
+      <div class="img-title">Comparaison des 3 Méthodes</div>
+      <img src="/static/visuals/anomaly_comparison.png" alt="Comparison">
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       SECTION : PRÉDICTION LIVE
+  ══════════════════════════════════════════════════════ -->
+  <section class="section" id="predict">
+    <div class="section-title">🤖 Prédiction en Temps Réel</div>
+
+    <div class="grid-2">
+
+      <!-- Régression -->
+      <div class="card">
+        <div class="card-title">📈 Prédire les Adhérents 2026/27 (Ridge)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Unité</label>
+            <select id="reg_unit">
+              <option value="1">Unité 1</option>
+              <option value="2">Unité 2</option>
+              <option value="3">Unité 3</option>
+              <option value="4">Unité 4</option>
+              <option value="5">Unité 5</option>
+              <option value="6">Unité 6</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Membres actuels (lag1)</label>
+            <input type="number" id="reg_members" value="12" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label>Taux de fuite actuel (%)</label>
+            <input type="number" id="reg_leak" value="52" min="0" max="100" step="0.1">
+          </div>
+        </div>
+        <br>
+        <button class="btn btn-primary" onclick="predictRegression()">
+          🔮 Prédire les Adhérents
+        </button>
+        <div class="result-box" id="reg_result">
+          <div class="result-value" id="reg_value">-</div>
+          <div class="result-label">adhérents prédits pour 2026/2027</div>
+        </div>
+      </div>
+
+      <!-- Classification -->
+      <div class="card">
+        <div class="card-title">🎯 Prédire le Risque Dropout (Logistic Regression)</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Unité</label>
+            <select id="cls_unit">
+              <option value="1">Unité 1</option>
+              <option value="2">Unité 2</option>
+              <option value="3">Unité 3</option>
+              <option value="4">Unité 4</option>
+              <option value="5">Unité 5</option>
+              <option value="6">Unité 6</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Membres actuels (lag1)</label>
+            <input type="number" id="cls_members" value="12" min="0" max="100">
+          </div>
+          <div class="form-group">
+            <label>Taux de fuite actuel (%)</label>
+            <input type="number" id="cls_leak" value="52" min="0" max="100" step="0.1">
+          </div>
+        </div>
+        <br>
+        <button class="btn btn-primary" onclick="predictDropout()">
+          🔮 Prédire le Dropout
+        </button>
+        <div class="result-box" id="cls_result">
+          <div class="result-value" id="cls_value">-</div>
+          <div class="result-label" id="cls_label">-</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════ -->
+<script>
+// Navigation
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Prédiction Régression
+async function predictRegression() {
+  const unit    = document.getElementById('reg_unit').value;
+  const members = document.getElementById('reg_members').value;
+  const leak    = document.getElementById('reg_leak').value;
+
+  const res = await fetch('/api/predict_regression', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      fk_type_unite: unit,
+      members_lag1: members,
+      leak_rate_lag1: leak
+    })
+  });
+  const data = await res.json();
+  const box = document.getElementById('reg_result');
+  document.getElementById('reg_value').textContent = data.prediction;
+  box.className = 'result-box show';
+}
+
+// Prédiction Dropout
+async function predictDropout() {
+  const unit    = document.getElementById('cls_unit').value;
+  const members = document.getElementById('cls_members').value;
+  const leak    = document.getElementById('cls_leak').value;
+
+  const res = await fetch('/api/predict_dropout', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      fk_type_unite: unit,
+      members_lag1: members,
+      leak_rate_lag1: leak
+    })
+  });
+  const data = await res.json();
+  const box   = document.getElementById('cls_result');
+  const val   = document.getElementById('cls_value');
+  const label = document.getElementById('cls_label');
+
+  if (data.dropout === 1) {
+    val.textContent   = '🔴 DROPOUT';
+    label.textContent = `Probabilité : ${(data.probability * 100).toFixed(1)}% — Intervention requise`;
+    box.className = 'result-box show danger-box';
+  } else {
+    val.textContent   = '🟢 NO DROPOUT';
+    label.textContent = `Probabilité : ${(data.probability * 100).toFixed(1)}% — Situation normale`;
+    box.className = 'result-box show success-box';
+  }
+}
+</script>
+
+</body>
+</html>
