@@ -1,0 +1,8 @@
+Model,Stage,Validated,Aliases
+ML_Scout_GMM_full_k3,production,true,-
+ML_Scout_KMeans_k3,registered,false,-
+ML_Scout_LR_Classification,production,true,-
+ML_Scout_RF_Classification,registered,false,-
+ML_Scout_RF_Regression,registered,false,-
+ML_Scout_Ridge_Regression,production,true,-
+ML_Scout_XGBoost_TS,production,true,-

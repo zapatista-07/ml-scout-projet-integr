@@ -1,0 +1,23 @@
+artifact_path: file:C:/Users/louay/OneDrive/Bureau/Partie ML Pi/ml_scout_project/mlruns/1/models/m-7ecde335a35b412a914ddd72cc26edaa/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.11.1
+model_id: m-7ecde335a35b412a914ddd72cc26edaa
+model_size_bytes: 670
+model_uuid: m-7ecde335a35b412a914ddd72cc26edaa
+prompts: null
+run_id: f389318a12894a378d8d82d101ddf3b6
+utc_time_created: '2026-04-22 07:00:51.440681'

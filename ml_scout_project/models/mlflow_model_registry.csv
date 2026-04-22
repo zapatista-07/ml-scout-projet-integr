@@ -1,0 +1,8 @@
+Model,Version,Status,Section,Metric,Description
+ML_Scout_GMM_full_k3,3,production,clustering,Silhouette=0.6276,Meilleur modèle clustering — Silhouette=0.6276 — ML Scout Projet Intégré
+ML_Scout_KMeans_k3,3,registered,-,-,-
+ML_Scout_LR_Classification,3,registered,-,-,-
+ML_Scout_RF_Classification,3,registered,-,-,-
+ML_Scout_RF_Regression,3,registered,-,-,-
+ML_Scout_Ridge_Regression,3,production,regression,R²=0.770,Meilleur modèle regression — R²=0.770 — ML Scout Projet Intégré
+ML_Scout_XGBoost_TS,3,production,timeseries,R²=0.661,Meilleur modèle timeseries — R²=0.661 — ML Scout Projet Intégré

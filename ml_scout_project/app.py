@@ -166,4 +166,4 @@ def predict_dropout():
     return jsonify({'dropout': pred, 'probability': round(proba, 3), 'unit': unit})
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5002)

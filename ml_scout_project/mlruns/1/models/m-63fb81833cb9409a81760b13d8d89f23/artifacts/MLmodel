@@ -1,0 +1,36 @@
+artifact_path: file:C:/Users/louay/OneDrive/Bureau/Partie ML Pi/ml_scout_project/mlruns/1/models/m-63fb81833cb9409a81760b13d8d89f23/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.13.5
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+is_signature_from_type_hint: false
+mlflow_version: 3.11.1
+model_id: m-63fb81833cb9409a81760b13d8d89f23
+model_size_bytes: 36245
+model_uuid: m-63fb81833cb9409a81760b13d8d89f23
+prompts: null
+run_id: 46dfd531efaa4a6ca2e8e714e0a36c9b
+signature:
+  inputs: '[{"type": "long", "name": "members_lag1", "required": true}, {"type": "double",
+    "name": "leak_rate_lag1", "required": true}, {"type": "double", "name": "growth_rate_lag1",
+    "required": true}, {"type": "double", "name": "delta_members_lag1", "required":
+    true}, {"type": "double", "name": "avg_members_unite_past", "required": true},
+    {"type": "long", "name": "season_index", "required": true}, {"type": "long", "name":
+    "fk_type_unite", "required": true}, {"type": "double", "name": "retention_rate",
+    "required": true}, {"type": "double", "name": "members_x_retention", "required":
+    true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2026-04-22 09:37:09.772260'
