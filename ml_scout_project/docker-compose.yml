@@ -1,7 +1,13 @@
 version: '3.8'
 
+# =============================================================================
+# ML Scout — Full Stack with Monitoring (S13)
+# Services: Flask API + Monitoring API + Prometheus + Grafana + Alertmanager
+# =============================================================================
+
 services:
-  # ── Flask API ML Scout ──────────────────────────────────────────────────────
+
+  # ── Flask ML API (original) ─────────────────────────────────────────────────
   ml-api:
     build:
       context: .
@@ -21,12 +27,87 @@ services:
     networks:
       - ml_network
 
+  # ── Monitoring API (Prometheus metrics + drift detection) ───────────────────
+  monitoring-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.monitoring
+    container_name: ml_scout_monitoring
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - ml_network
+
+  # ── Prometheus ──────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: ml_scout_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    restart: unless-stopped
+    depends_on:
+      - monitoring-api
+    networks:
+      - ml_network
+
+  # ── Alertmanager ────────────────────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: ml_scout_alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    restart: unless-stopped
+    networks:
+      - ml_network
+
+  # ── Grafana ─────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: ml_scout_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=mlscout2024
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/provisioning/dashboards/ml_scout_dashboard.json
+      - GF_FEATURE_TOGGLES_ENABLE=publicDashboards
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    networks:
+      - ml_network
+
   # ── MLflow UI ───────────────────────────────────────────────────────────────
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     container_name: mlflow_ui
     ports:
-      - "5001:5001"
+      - "5002:5001"
     volumes:
       - ./mlflow.db:/mlflow/mlflow.db
       - ./mlruns:/mlflow/mlruns
@@ -40,23 +121,12 @@ services:
     networks:
       - ml_network
 
-  # ── n8n (optionnel — si tu veux tout dans Docker) ────────────────────────────
-  # n8n:
-  #   image: docker.n8n.io/n8nio/n8n
-  #   container_name: n8n
-  #   ports:
-  #     - "5678:5678"
-  #   volumes:
-  #     - n8n_data:/home/node/.n8n
-  #   environment:
-  #     - N8N_BASIC_AUTH_ACTIVE=false
-  #   restart: unless-stopped
-  #   networks:
-  #     - ml_network
-
 networks:
   ml_network:
     driver: bridge
 
 volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
   n8n_data:

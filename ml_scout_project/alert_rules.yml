@@ -1,0 +1,133 @@
+groups:
+  - name: ml_scout_alerts
+    interval: 10s
+    rules:
+
+      # ── HIGH LATENCY ──────────────────────────────────────────────────────
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, rate(ml_scout_request_latency_seconds_bucket[2m])) > 1.0
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency detected"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 1s) on endpoint {{ $labels.endpoint }}"
+
+      - alert: CriticalLatency
+        expr: histogram_quantile(0.95, rate(ml_scout_request_latency_seconds_bucket[2m])) > 2.5
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical API latency — SLA breach"
+          description: "P95 latency is {{ $value | humanizeDuration }} (threshold: 2.5s) — SLA breach!"
+
+      # ── HIGH ERROR RATE ───────────────────────────────────────────────────
+      - alert: HighErrorRate
+        expr: >
+          rate(ml_scout_errors_total[2m]) /
+          (rate(ml_scout_requests_total[2m]) + 0.001) > 0.10
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 10%) on {{ $labels.endpoint }}"
+
+      - alert: CriticalErrorRate
+        expr: >
+          rate(ml_scout_errors_total[2m]) /
+          (rate(ml_scout_requests_total[2m]) + 0.001) > 0.30
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical error rate — service degraded"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 30%) — immediate action required!"
+
+      # ── ACCURACY DEGRADATION ──────────────────────────────────────────────
+      - alert: ModelAccuracyDegradation
+        expr: ml_scout_accuracy_degradation == 1
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model accuracy degradation detected"
+          description: "Model {{ $labels.model_name }} accuracy dropped >5% below baseline. Retraining may be required."
+
+      - alert: AccuracyDeltaWarning
+        expr: ml_scout_accuracy_delta_from_baseline < -0.03
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model accuracy declining"
+          description: "Model {{ $labels.model_name }} accuracy is {{ $value | humanizePercentage }} below baseline"
+
+      # ── CONFIDENCE DEGRADATION ────────────────────────────────────────────
+      - alert: ModelConfidenceDrop
+        expr: ml_scout_confidence_degradation == 1
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model confidence degradation"
+          description: "Model {{ $labels.model_name }} prediction confidence dropped significantly"
+
+      # ── DATA DRIFT ────────────────────────────────────────────────────────
+      - alert: DataDriftDetected
+        expr: ml_scout_drift_detected == 1
+        for: 0s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data distribution drift detected"
+          description: "Feature {{ $labels.feature }} shows distribution drift (score={{ $value }}). Model may need retraining."
+
+      - alert: SevereDriftScore
+        expr: ml_scout_drift_score > 0.6
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Severe data drift"
+          description: "Feature {{ $labels.feature }} drift score is {{ $value }} (critical threshold: 0.6)"
+
+      # ── DATA HEALTH ───────────────────────────────────────────────────────
+      - alert: HighMissingValues
+        expr: ml_scout_missing_values_ratio > 0.10
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "High missing values ratio"
+          description: "Feature {{ $labels.feature }} has {{ $value | humanizePercentage }} missing values"
+
+      - alert: StaleData
+        expr: ml_scout_data_freshness_seconds > 600
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Data freshness issue"
+          description: "Data has not been updated for {{ $value | humanizeDuration }}"
+
+      # ── RETRAINING TRIGGER ────────────────────────────────────────────────
+      - alert: RetrainingRequired
+        expr: increase(ml_scout_retraining_triggers_total[5m]) > 0
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model retraining triggered"
+          description: "Retraining triggered due to: {{ $labels.reason }}. Initiate retraining pipeline."
+
+      # ── API DOWN ──────────────────────────────────────────────────────────
+      - alert: APIDown
+        expr: up{job="ml_scout_api"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "ML Scout API is down"
+          description: "The ML Scout monitoring API has been unreachable for 30 seconds"

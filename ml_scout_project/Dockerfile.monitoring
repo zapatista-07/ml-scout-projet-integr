@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies
+RUN pip install --no-cache-dir \
+    flask==3.0.0 \
+    prometheus-client==0.19.0 \
+    pandas==2.1.0 \
+    numpy==1.26.0
+
+# Copy monitoring API
+COPY monitoring_api.py .
+
+# Create logs directory
+RUN mkdir -p /app/logs
+
+EXPOSE 5001
+
+CMD ["python", "monitoring_api.py"]
